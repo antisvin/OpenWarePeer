@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/ch.elf",
+            "name": "OpenWarePeer",
+            "device": "STM32F446RE",
+            "svdFile": "STM32F446x.svd",
+            "rtos": "auto",
+            "configFiles": [
+                "interface/stlink.cfg", "target/stm32f4x.cfg"
+            ]
+        }
+    ]
+}
