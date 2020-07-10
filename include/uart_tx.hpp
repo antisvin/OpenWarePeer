@@ -21,7 +21,7 @@ private:
         }
     };
 
-    BusFrame<> tx_frame;
+    BusFrame tx_frame;
 };
 
 }

@@ -10,18 +10,16 @@ namespace owpeer {
 
 using namespace chibios_rt;
 
-class RxThread : public BaseStaticThread<128> {
+class FrameEncoderThread : public BaseStaticThread<128> {
 private:
     void main (void) override {
-        setName("Uart Rx");
+        setName("Frame encoder");
 
         while (true){
-            // read from serial
-            // send frame to input buffer
         }
     };
 
-    BusFrame<> rx_frame;
+    BusFrame rx_frame;
 };
 
 }

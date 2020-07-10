@@ -1,12 +1,14 @@
 #include "owpeer.h"
 #include "main.hpp"
 #include "uart_rx.hpp"
+#include "frame_decoder.hpp"
 
 
 namespace owpeer {
 
 FramesFifo rx_fifo, tx_fifo;
 UartRxThread uart_rx_thread;
+FrameDecoderThread frame_decoder_thread;
 
 
 /*
@@ -44,6 +46,7 @@ int main(void) {
     chprintf(chp, "Let's make some noise!\r\n");
 
     uart_rx_thread.start(NORMALPRIO + 1);
+    frame_decoder_thread.start(NORMALPRIO + 1);
 
     while (true) {
         palClearPad(GPIOA, GPIOA_LED_GREEN);

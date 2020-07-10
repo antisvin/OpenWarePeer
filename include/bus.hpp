@@ -55,21 +55,21 @@ public:
     BusFrame(BusFrame&&) = default;
     BusFrame& operator=(BusFrame&&) = default; 
 
-    char frame_buffer[frame_size];
+    uint8_t frame_buffer[frame_size];
 
-    uint8_t getPeerId(){
-        return frame_buffer[0] & 0xf0;
-    }
-
-    uint8_t getOwlProtocolId(){
+    uint8_t getPeerId() const {
         return frame_buffer[0] & 0x0f;
     }
 
-    OwlProtocol getOwlProtocolType(){
+    uint8_t getOwlProtocolId() const {
+        return frame_buffer[0] & 0xf0;
+    }
+
+    OwlProtocol getOwlProtocolType() const {
         return OwlProtocol(getOwlProtocolId());
     }
 
-    bool isMidi(){
+    bool isMidi() const {
         auto cmd_id = getOwlProtocolId();
         return cmd_id <= USB_COMMAND_SINGLE_BYTE && cmd_id > USB_COMMAND_CABLE_EVENT;        
     }
