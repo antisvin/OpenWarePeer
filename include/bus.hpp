@@ -47,7 +47,14 @@ constexpr size_t frame_size = 4;
 
 class BusFrame {
 public:
-    BusFrame();
+    BusFrame() = default;
+
+    /* Prohibit copy construction and assignment, but allow move.*/
+    BusFrame(const BusFrame&) = delete;
+    BusFrame& operator=(const BusFrame&) = delete;
+    BusFrame(BusFrame&&) = default;
+    BusFrame& operator=(BusFrame&&) = default; 
+
     char frame_buffer[frame_size];
 
     uint8_t getPeerId(){
@@ -81,6 +88,13 @@ public:
         std::copy(srcmsg, &srcmsg[frame_size - 1], msg);
     }
 
+    BusObject() = default;
+
+    /* Prohibit copy construction and assignment, but allow move.*/
+    BusObject(const BusObject&) = delete;
+    BusObject& operator=(const BusObject&) = delete;
+    BusObject(BusObject&&) = default;
+    BusObject& operator=(BusObject&&) = default; 
 };
 
 }

@@ -1,17 +1,19 @@
 #include "owpeer.h"
 #include "main.hpp"
+#include "uart_rx.hpp"
+
 
 namespace owpeer {
 
 FramesFifo rx_fifo, tx_fifo;
+UartRxThread uart_rx_thread;
 
 
 /*
  * Serial driver config
  */
 
-BaseSequentialStream* chp = (BaseSequentialStream*)&SD2;
-
+BaseSequentialStream* chp = (BaseSequentialStream*)&USB_SERIAL;
 
 static const SerialConfig serialcfg = {
   115200,
@@ -40,6 +42,8 @@ int main(void) {
     sdStart(&BUS_SERIAL, &serialcfg);
 
     chprintf(chp, "Let's make some noise!\r\n");
+
+    uart_rx_thread.start(NORMALPRIO + 1);
 
     while (true) {
         palClearPad(GPIOA, GPIOA_LED_GREEN);

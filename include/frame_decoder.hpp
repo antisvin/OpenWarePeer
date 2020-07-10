@@ -23,6 +23,7 @@ private:
             if (rx_fifo.receiveObjectTimeout((void**)(&tmp_frame), TIME_INFINITE) == MSG_OK){
                 switch (tmp_frame.getCommandType()) {
                 case OWL_COMMAND_DISCOVER:
+                    chprintf(chp, "Received discover\r\n");
                     break;
                 case OWL_COMMAND_BUTTON:
                     break;

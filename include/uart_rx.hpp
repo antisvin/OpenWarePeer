@@ -2,18 +2,16 @@
 #ifndef __UART_RX__
 #define __UART_RX__
 
-#include "bus.hpp"
 #include "main.hpp"
-#include "owpeer.h"
+#include "bus.hpp"
+#include "uart_fifo.hpp"
 
 namespace owpeer {
-
-using namespace chibios_rt;
 
 class UartRxThread : public BaseStaticThread<128> {
 private:
     void main (void) override {
-        setName("Uart Rx");
+        setName("UART Rx");
 
         while (true){
             // Allocate new frame in RX pool

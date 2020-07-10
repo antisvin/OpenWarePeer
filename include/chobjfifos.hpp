@@ -41,6 +41,12 @@ public:
         chFifoObjectInit(&fifo, size, n, buf, msgbuf);
     }
 
+    /* Prohibit copy construction and assignment, but allow move.*/
+    Fifo(const Fifo&) = delete;
+    Fifo& operator=(const Fifo&) = delete;
+    Fifo(Fifo&&) = default;
+    Fifo& operator=(Fifo&&) = default;    
+
     /**
      * @brief   Allocates a free object.
      *
