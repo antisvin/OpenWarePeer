@@ -9,7 +9,8 @@ namespace owpeer {
 FramesFifo rx_fifo, tx_fifo;
 UartRxThread uart_rx_thread;
 FrameDecoderThread frame_decoder_thread;
-
+static uint8_t bus_heap_buffer[BUS_HEAP_SIZE];
+Heap bus_heap((void*)bus_heap_buffer, BUS_HEAP_SIZE);
 
 /*
  * Serial driver config

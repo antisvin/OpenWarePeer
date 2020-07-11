@@ -14,4 +14,9 @@
 #define USB_SERIAL SD2
 #define BUS_SERIAL SD4
 
+/*
+ * Heap size for bus - set to 16k
+ */
+#define BUS_HEAP_SIZE 0x8000 
+
 #endif

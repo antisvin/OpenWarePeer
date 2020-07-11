@@ -2,9 +2,9 @@
 #ifndef __FRAME_DECODER__
 #define __FRAME_DECODER__
 
-#include "main.hpp"
 #include "bus.hpp"
-#include "uart_fifo.hpp"
+//#include "uart_fifo.hpp"
+#include "bus_protocol.hpp"
 
 namespace owpeer {
 
@@ -24,11 +24,15 @@ private:
                 auto proto = frame->getOwlProtocolType();
                 chprintf(chp, "PROTO %u\r\n",  (int)proto);
                 switch (proto) {
-                case OWL_COMMAND_DISCOVER:
-                    chprintf(chp, "Received discover\r\n");
+                case OWL_COMMAND_DISCOVER: {
+                        chprintf(chp, "Received discover\r\n");
+                        auto obj = BusDiscover::decodeFrame(*frame);
+                        process
+                    }
                     break;
-                case OWL_COMMAND_BUTTON:
-                    chprintf(chp, "Received button\r\n");
+                case OWL_COMMAND_BUTTON: {
+                        chprintf(chp, "Received button\r\n");
+                    }
                     break;
                 case OWL_COMMAND_PARAMETER:
                     chprintf(chp, "Received command\r\n");

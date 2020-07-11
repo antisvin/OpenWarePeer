@@ -14,6 +14,7 @@ namespace owpeer {
 using namespace chibios_rt;
 
 extern BaseSequentialStream* chp;
+extern Heap bus_heap;
 
 }
 
