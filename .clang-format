@@ -17,6 +17,7 @@ PointerAlignment: 'Left'
 SortIncludes: 'false'
 SpaceBeforeParens: ControlStatements
 BreakBeforeBraces: Custom
+Standard: 'c++17'
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false

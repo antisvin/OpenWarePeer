@@ -2,6 +2,7 @@
 #include "main.hpp"
 #include "uart_rx.hpp"
 #include "frame_decoder.hpp"
+#include "message_handler.hpp"
 
 
 namespace owpeer {
@@ -9,8 +10,10 @@ namespace owpeer {
 FramesFifo rx_fifo, tx_fifo;
 UartRxThread uart_rx_thread;
 FrameDecoderThread frame_decoder_thread;
+MessageHandlerThread message_handler_thread;
 static uint8_t bus_heap_buffer[BUS_HEAP_SIZE];
 Heap bus_heap((void*)bus_heap_buffer, BUS_HEAP_SIZE);
+BusProtocolFifo bus_protocol_fifo;
 
 /*
  * Serial driver config
@@ -46,8 +49,10 @@ int main(void) {
 
     chprintf(chp, "Let's make some noise!\r\n");
 
-    uart_rx_thread.start(NORMALPRIO + 1);
+    auto handler = message_handler_thread.start(NORMALPRIO + 1);
+    frame_decoder_thread.setMessageHandler(&handler);
     frame_decoder_thread.start(NORMALPRIO + 1);
+    uart_rx_thread.start(NORMALPRIO + 1);
 
     while (true) {
         palClearPad(GPIOA, GPIOA_LED_GREEN);

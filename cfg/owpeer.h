@@ -19,4 +19,6 @@
  */
 #define BUS_HEAP_SIZE 0x8000 
 
+#define PROTOCOL_OBJECTS_POOL_NUM 128
+
 #endif

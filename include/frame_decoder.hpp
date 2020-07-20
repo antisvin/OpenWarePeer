@@ -2,9 +2,8 @@
 #ifndef __FRAME_DECODER__
 #define __FRAME_DECODER__
 
-#include "bus.hpp"
-//#include "uart_fifo.hpp"
 #include "bus_protocol.hpp"
+//#include "bus_fifo.hpp"
 
 namespace owpeer {
 
@@ -12,14 +11,21 @@ using namespace chibios_rt;
 
 
 class FrameDecoderThread : public BaseStaticThread<128> {
+public:
+    void setMessageHandler(ThreadReference* tref){
+        message_handler = tref;
+    }
+
 private:
+    ThreadReference* message_handler;
+
     void main (void) override {
         setName("Frame decoder");
         chprintf(chp, "decoder started\r\n");
         BusFrame* frame;
         while (true){
             // read from Rx FIFO
-            if (rx_fifo.receiveObjectTimeout((void**)(&frame), TIME_INFINITE) == MSG_OK){
+            if (rx_fifo.receiveObjectTimeoutInfinite(&frame) == MSG_OK){
                 chprintf(chp, "got frame\r\n");
                 auto proto = frame->getOwlProtocolType();
                 chprintf(chp, "PROTO %u\r\n",  (int)proto);
@@ -27,7 +33,8 @@ private:
                 case OWL_COMMAND_DISCOVER: {
                         chprintf(chp, "Received discover\r\n");
                         auto obj = BusDiscover::decodeFrame(*frame);
-                        process
+                        bus_protocol_fifo.sendObject(obj);
+                        //message_handler->sendMessage();
                     }
                     break;
                 case OWL_COMMAND_BUTTON: {

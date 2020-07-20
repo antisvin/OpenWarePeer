@@ -15,7 +15,7 @@ private:
 
         while (true){
             // Allocate new frame in RX pool
-            auto rx_frame = reinterpret_cast<BusFrame*>(rx_fifo.takeObjectTimeout(TIME_INFINITE));
+            auto rx_frame = rx_fifo.takeObjectTimeoutInfinite();
 
             // read from serial
             sdRead(&BUS_SERIAL, (uint8_t*)(rx_frame->frame_buffer), frame_size);
@@ -23,7 +23,7 @@ private:
                 rx_frame->frame_buffer[0], rx_frame->frame_buffer[1],
                 rx_frame->frame_buffer[2], rx_frame->frame_buffer[3]);
 
-            rx_fifo.sendObject((void*)rx_frame);
+            rx_fifo.sendObject(rx_frame);
         }
     };
 

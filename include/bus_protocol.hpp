@@ -2,12 +2,15 @@
 #ifndef __BUS_PROTOCOL__
 #define __BUS_PROTOCOL__
 
+#include <variant>
 #include "main.hpp"
 #include "bus.hpp"
+#include "bus_fifo.hpp"
 
 namespace owpeer {
 
 static constexpr uint8_t NO_UID = 0xff;
+
 
 /*
  * Bus object base class
@@ -48,6 +51,11 @@ public:
      * Encode frame, loading data from this object
      */
     // void encodeFrame(BusFrame& frame) {};
+
+    OwlProtocol getObjectType() {
+        return object_type;
+    }
+
 protected:
     OwlProtocol object_type;
     bool is_midi;
@@ -80,14 +88,7 @@ public:
         : BusPeerObject(OWL_COMMAND_DISCOVER, peer)
         , token(token) {
     }
-
-    static BusDiscover decodeFrame(const BusFrame& frame) {
-        BusDiscover discover(frame.getSeq(),
-            (frame.frame_buffer[1] << 16) | (frame.frame_buffer[2] << 8) |
-                frame.frame_buffer[3]);
-        return discover;
-    }
-
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
         frame.fill(OWL_COMMAND_DISCOVER | peer, token >> 16, token >> 8, token);
     }
@@ -103,15 +104,10 @@ private:
 class BusReset : public BusObject {
     BusReset()
         : BusObject(OWL_COMMAND_RESET) {};
-
-    static BusReset decodeFrame(const BusFrame& frame) {
-        (void)frame;
-        BusReset reset;
-        return reset;
-    }
-
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
-        frame.fill(OWL_COMMAND_RESET, OWL_COMMAND_RESET, OWL_COMMAND_RESET, OWL_COMMAND_RESET);
+        frame.fill(OWL_COMMAND_RESET, OWL_COMMAND_RESET, OWL_COMMAND_RESET,
+            OWL_COMMAND_RESET);
     }
 };
 
@@ -126,11 +122,7 @@ class BusMidi : public BusObject {
         , data3(data3)
         , data4(data4) {
     }
-    static BusMidi decodeFrame(const BusFrame& frame) {
-        BusMidi midi(frame.frame_buffer[0], frame.frame_buffer[1],
-            frame.frame_buffer[2], frame.frame_buffer[3]);
-        return midi;
-    }
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
         frame.fill(data1, data2, data3, data4);
     }
@@ -148,12 +140,7 @@ class BusButton : public BusPeerObject {
         , bid(bid)
         , value(value) {
     }
-    static BusButton decodeFrame(const BusFrame& frame) {
-        PatchButtonId new_bid = PatchButtonId(frame.frame_buffer[1]);
-        uint32_t new_value = (frame.frame_buffer[2] << 8) | frame.frame_buffer[3];
-        BusButton button(frame.getSeq(), new_bid, new_value);
-        return button;
-    }
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
         frame.fill(OWL_COMMAND_BUTTON | peer, uint8_t(bid), value >> 8, value);
     }
@@ -173,12 +160,7 @@ public:
         , pid(pid)
         , value(value) {
     }
-    static BusParameter decodeFrame(const BusFrame& frame) {
-        PatchParameterId new_pid = PatchParameterId(frame.frame_buffer[1]);
-        uint32_t new_value = (frame.frame_buffer[2] << 8) | frame.frame_buffer[3];
-        BusParameter parameter(frame.getSeq(), new_pid, new_value);
-        return parameter;
-    }
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
         frame.fill(OWL_COMMAND_PARAMETER | peer, uint8_t(pid), value >> 8, value);
     }
@@ -195,11 +177,7 @@ public:
         , cmd(cmd)
         , data(data) {
     }
-    static BusCommand decodeFrame(const BusFrame& frame) {
-        BusCommand command(frame.getSeq(), frame.frame_buffer[1],
-            (frame.frame_buffer[2] << 8) | frame.frame_buffer[3]);
-        return command;
-    }
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
     void encodeFrame(BusFrame& frame) {
         frame.fill(OWL_COMMAND_COMMAND | peer, cmd, data >> 8, data);
     }
@@ -219,74 +197,28 @@ public:
         frames_remaining = len / 3;
         position = const_cast<uint8_t*>(data);
     }
+
     bool isAllocated() const {
         return data != nullptr;
     }
+    /*
+     * Frame decoding functions
+     */
     bool isDecoded() const {
         return frames_remaining == FRAMES_UNKNOWN;
     }
-    static BusData decodeFrame(const BusFrame& frame) {
-        uint32_t size = (frame.frame_buffer[1] << 16) |
-            (frame.frame_buffer[2] << 8) | frame.frame_buffer[3];
-        void* data = nullptr;
-        if (size < FRAMES_UNKNOWN) {
-            data = bus_heap.alloc(size);
-        }
-        BusData bus_data(frame.getSeq(), (uint8_t*)data, size);
-        return bus_data;
-    }
-    BusData& operator<<(const BusFrame& frame) {
-        if (frames_remaining--) {
-            // This handles frame decoding until last frame is reached
-            *position++ = frame.frame_buffer[1];
-            *position++ = frame.frame_buffer[2];
-            *position++ = frame.frame_buffer[3];
-        }
-        else {
-            // Last frame is terminated with zeros, so we have to make a partial load
-            switch (len % 3) {
-            case 1:
-                *position++ = frame.frame_buffer[1];
-                break;
-            case 2:
-                *position++ = frame.frame_buffer[1];
-                *position++ = frame.frame_buffer[2];
-            default:
-                // This clause is occuring if data size is a multiple of 3
-                break;
-            }
-        }
-        return *this;
-    }
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
+    BusData& operator<<(const BusFrame& frame);
+    /*
+     * Frame encoding functions
+     */
     bool isEncoded() const {
         return bool(bytes_remaining);
     }
     void encodeFrame(BusFrame& frame) const {
         frame.fill(OWL_COMMAND_DATA | peer, len >> 16, len >> 8, len);
     }
-    BusData& operator>>(BusFrame& frame) {
-        frame.frame_buffer[0] = OWL_COMMAND_DATA | peer;
-        if (frames_remaining--) {
-            frame.fill(*position++, *position++, *position++);
-            bytes_remaining -= 3;
-        }
-        else {
-            switch (len) {
-            case 1:
-                frame.fill(*position++, '\0', '\0');
-                break;
-            case 2:
-                frame.fill(*position++, *position++, '\0');
-                break;
-            default:
-                // This clause should never be reached - it would mean that isEncoded
-                // result hasn't been checked before sending last frame
-                break;
-            };
-            bytes_remaining = 0;
-        }
-        return *this;
-    }
+    BusData& operator>>(BusFrame& frame);
 
 private:
     const uint8_t* data;
@@ -303,28 +235,33 @@ public:
     BusMessage(uint8_t peer, const char* msg)
         : BusPeerObject(OWL_COMMAND_MESSAGE, peer)
         , msg(msg) {
-            position = const_cast<char*>(msg);
-            len = strnlen(msg, max_msg_len);
-            bytes_remaining = len;
-            if (len % 3 == 0) // We want to force sending 0-filled frame
-                bytes_remaining += 3;
-        };
-
-    static BusData decodeFrame(const BusFrame& frame) {
-
-    }
-    void encodeFrame(BusFrame& frame) const {
-        if (frames_remaining--){
-            frame.fill(*position++, *position++, *position++);
+        position = (uint8_t*)(const_cast<char*>(msg));
+        len = std::find(msg, msg + max_msg_len, 0) - msg;
+        bytes_remaining = len;
+        if (len % 3 == 0) // We want to force sending 0-filled frame
+            bytes_remaining += 3;
+    };
+    ~BusMessage() {
+        // Delete message data
+    };
+    static BusProtocolObject* decodeFrame(const BusFrame& frame);
+    void encodeFrame(BusFrame& frame) {
+        if (frames_remaining--) {
+            frame.frame_buffer[1] = *position++;
+            frame.frame_buffer[2] = *position++;
+            frame.frame_buffer[3] = *position++;
             bytes_remaining -= 3;
         }
         else {
             switch (bytes_remaining) {
             case 1:
-                frame.fill(*position++, '\0', '\0');
+                frame.fill(*position, '\0', '\0');
+                position++;
                 break;
             case 2:
-                frame.fill(*position++, *position++, '\0');
+                frame.frame_buffer[1] = *position++;
+                frame.frame_buffer[2] = *position++;
+                frame.frame_buffer[3] = '\0';
                 break;
             case 3:
                 frame.fill('\0', '\0', '\0');
@@ -334,11 +271,11 @@ public:
             }
             bytes_remaining = 0;
         }
-        
     }
+
 private:
     const char* msg;
-    char* position;
+    uint8_t* position;
     uint16_t len, frames_remaining, bytes_remaining;
 };
 

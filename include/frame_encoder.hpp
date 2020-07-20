@@ -4,7 +4,7 @@
 
 #include "ch.hpp"
 #include "hal.h"
-#include "bus_frame.hpp"
+#include "bus_protocol.hpp"
 
 namespace owpeer {
 
